@@ -3,7 +3,7 @@ use std::{
     fs::File,
     io::{Read, Write},
     process::exit,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex}, thread,
 };
 
 use clipboard_win::{formats, Clipboard, Getter, Setter, Unicode};
@@ -137,7 +137,7 @@ fn main() {
         );
     }
 
-    loop {}
+    thread::park();
 }
 
 fn setup_interrupt(clip_arc: Arc<ClipData>) {
