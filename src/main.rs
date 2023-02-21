@@ -1,3 +1,4 @@
+#![windows_subsystem = "windows"]
 use std::{
     fs::File,
     io::{Read, Write},
@@ -8,7 +9,6 @@ use std::{
 use clipboard_win::{formats, Clipboard, Getter, Setter, Unicode};
 use mki::{register_hotkey, Keyboard};
 use notify_rust::Notification;
-
 struct ClipData {
     data: Vec<Mutex<Option<String>>>,
 }
