@@ -2,13 +2,14 @@
 use std::{
     fs::File,
     io::{Read, Write},
-    process::exit,
-    sync::{Arc, Mutex}, thread,
+    sync::{Arc, Mutex},
+    thread,
 };
 
 use clipboard_win::{formats, Clipboard, Getter, Setter, Unicode};
 use mki::{register_hotkey, Keyboard};
 use notify_rust::Notification;
+
 struct ClipData {
     data: Vec<Mutex<Option<String>>>,
 }
@@ -68,6 +69,8 @@ fn get_set_callback(clip_data: Arc<ClipData>, index: usize) -> impl Fn() {
             },
             Err(e) => println!("{:?}", e),
         }
+
+        save_data(clip_data.clone());
     }
 }
 
@@ -118,7 +121,6 @@ fn main() {
     let clip = get_default();
 
     let clip_data = Arc::new(clip);
-    setup_interrupt(clip_data.clone());
 
     for i in 0..=9 {
         register_hotkey(
@@ -140,14 +142,14 @@ fn main() {
     thread::park();
 }
 
-fn setup_interrupt(clip_arc: Arc<ClipData>) {
-    ctrlc::set_handler(move || {
-        let data = serde_yaml::to_string(&clip_arc.load_to_serializable());
-        let mut file = File::create("data.yaml").expect("Could not open save directory.");
-        file.write_all(&data.unwrap().as_bytes()).unwrap();
-        exit(0);
-    })
-    .expect("Could not set interrupt handler.");
+fn save_data(clip_arc: Arc<ClipData>) {
+    let data = serde_yaml::to_string(&clip_arc.load_to_serializable());
+    match File::create("data.yaml") {
+        Ok(mut file) => {
+            _ = file.write_all(&data.unwrap().as_bytes());
+        }
+        Err(_) => {}
+    }
 }
 
 fn number_to_key(number: usize) -> Keyboard {
