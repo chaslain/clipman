@@ -11,44 +11,46 @@ use mki::{register_hotkey, Keyboard};
 use notify_rust::Notification;
 
 struct ClipData {
-    data: Vec<Mutex<Option<String>>>,
+    data: Mutex<Vec<Option<String>>>,
 }
 
 impl Default for ClipData {
     fn default() -> Self {
-        let mut data: Vec<Mutex<Option<String>>> = Vec::new();
+        let mut data: Vec<Option<String>> = Vec::new();
 
         for i in 0..=9 {
-            data.insert(i, Mutex::new(None));
+            data.insert(i, None);
         }
-        Self { data }
+        Self {
+            data: Mutex::new(data),
+        }
     }
 }
 
 impl ClipData {
     pub fn load_to_serializable(&self) -> Vec<Option<String>> {
-        let mut result = Vec::new();
-        for i in self.data.iter() {
-            match i.lock() {
-                Ok(obj) => {
-                    result.push(obj.clone());
+        let mut result: Vec<Option<String>> = Vec::new();
+        match self.data.lock() {
+            Ok(data) => {
+                for i in data.iter() {
+                    result.push(i.clone());
                 }
-                Err(_) => {}
             }
+            Err(_) => {}
         }
 
         result
     }
 
     pub fn load_from_serialized(&mut self, no_mutex: Vec<Option<String>>) {
-        let mut data: Vec<Mutex<Option<String>>> = Vec::new();
+        let mut data: Vec<Option<String>> = Vec::new();
 
         for i in no_mutex {
-            let mutex = Mutex::new(i);
+            let mutex = i;
             data.push(mutex);
         }
 
-        self.data = data;
+        self.data = Mutex::new(data);
     }
 }
 
@@ -58,9 +60,9 @@ fn get_set_callback(clip_data: Arc<ClipData>, index: usize) -> impl Fn() {
 
         let mut output: String = String::new();
         match formats::Unicode.read_clipboard(&mut output) {
-            Ok(_) => match clip_data.data[index].lock() {
+            Ok(_) => match clip_data.data.lock() {
                 Ok(mut v) => {
-                    *v = Some(output);
+                    v[index] = Some(output);
                     _ = Notification::new()
                         .body(&format!("Saved in slot {}", index))
                         .show();
@@ -77,8 +79,8 @@ fn get_set_callback(clip_data: Arc<ClipData>, index: usize) -> impl Fn() {
 fn get_read_callback(clip_data: Arc<ClipData>, index: usize) -> impl Fn() {
     move || {
         let _clip = Clipboard::new_attempts(10).expect("Open clipboard");
-        match clip_data.data[index].lock() {
-            Ok(v) => match &*v {
+        match clip_data.data.lock() {
+            Ok(v) => match &v[index] {
                 Some(string) => match Unicode.write_clipboard(string) {
                     Ok(_) => {
                         _ = Notification::new()
