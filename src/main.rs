@@ -1,10 +1,14 @@
 #![windows_subsystem = "windows"]
 use std::{
-    fs::File,
+    fs::{create_dir, File},
     io::{Read, Write},
+    path::Path,
     sync::{Arc, Mutex},
     thread,
 };
+
+const DIRECTORY: &str = "clipboard/";
+const FILE_NAME: &str = "clipboard/data.yaml";
 
 use clipboard_win::{formats, Clipboard, Getter, Setter, Unicode};
 use mki::{register_hotkey, Keyboard};
@@ -103,7 +107,7 @@ fn get_read_callback(clip_data: Arc<ClipData>, index: usize) -> impl Fn() {
 }
 
 fn get_default() -> ClipData {
-    match File::open("data.yaml") {
+    match File::open(FILE_NAME) {
         Ok(mut file) => {
             let mut file_data: String = String::new();
             file.read_to_string(&mut file_data).unwrap();
@@ -149,11 +153,19 @@ fn main() {
 
 fn save_data(clip_arc: Arc<ClipData>) {
     let data = serde_yaml::to_string(&clip_arc.load_to_serializable());
-    match File::create("data.yaml") {
+    ensure_directory();
+    match File::create(FILE_NAME) {
         Ok(mut file) => {
             _ = file.write_all(&data.unwrap().as_bytes());
         }
         Err(_) => {}
+    }
+}
+
+fn ensure_directory() {
+    let p: &Path = Path::new(DIRECTORY);
+    if !p.exists() {
+        _ = create_dir(DIRECTORY);
     }
 }
 
