@@ -141,7 +141,10 @@ fn main() {
         );
     }
 
-    thread::park();
+    loop {
+        // thread::park() does not last forever.
+        thread::park();
+    }
 }
 
 fn save_data(clip_arc: Arc<ClipData>) {
