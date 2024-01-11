@@ -4,6 +4,7 @@ AppVersion=0.1.4
 DefaultDirName={autopf}\Clipman
 DefaultGroupName=Clipman
 OutputBaseFilename=Clipman_Installer
+PrivilegesRequired=lowest
 
 
 [Files]
@@ -23,4 +24,4 @@ Filename: "{cmd}"; Parameters: "/C ""taskkill /im clipman.exe /f /t"; Flags: "ru
 
 ; placing shortcut in the auto start menu.
 [Icons]
-Name: "{commonstartup}\clipman"; Filename: "{app}\clipman.exe"; WorkingDir: "{app}"
+Name: "{userstartup}\clipman"; Filename: "{app}\clipman.exe"; WorkingDir: "{app}"
